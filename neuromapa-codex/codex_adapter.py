@@ -57,6 +57,8 @@ class SessionReader:
             state["cwd"] = str(payload.get("cwd") or "")
         elif kind == "turn_context":
             state["cwd"] = str(payload.get("cwd") or state.get("cwd", ""))
+        if state.get("session") in getattr(self, "excluded_sessions", set()):
+            return []
         t = timestamp(record.get("timestamp"))
         if t is None or t < self.since:
             return []
@@ -80,7 +82,6 @@ class SessionReader:
                          "buscar" if "search" in name else
                          "ejecutar" if name in ("exec", "exec_command", "shell", "shell_command") else "otro")
             call_id = str(payload.get("call_id") or "")
-            state.setdefault("calls", {})[call_id] = {"h": name[:120], "k": tool_kind}
             event.update(e="pre", h=name[:120], k=tool_kind,
                          id=hashlib.sha256(call_id.encode()).hexdigest()[:10])
             raw = payload.get("arguments", payload.get("input", ""))
@@ -97,6 +98,8 @@ class SessionReader:
                     hook_evento.sumar_comando(event, {"command": args.get("cmd") or args.get("command", "")},
                                               state.get("cwd", ""))
             # Bound metadata when an interrupted session never returns tool outputs.
+            state.setdefault("calls", {})[call_id] = {k: v for k, v in event.items()
+                                                     if k in ("h", "k", "f", "fs", "b", "p")}
             while len(state["calls"]) > 256:
                 state["calls"].pop(next(iter(state["calls"])))
             return [event]
@@ -192,7 +195,8 @@ def main(argv=None):
         print("Ya hay un observador activo para estos datos (o no se pudo tomar el candado).", file=sys.stderr)
         return 1
     try:
-        reader = SessionReader(args.codex_home, data / "codex-offsets.json", hook_evento.escribir_evento)
+        from codex_history import ActivityReader
+        reader = ActivityReader(args.codex_home, data, hook_evento.escribir_evento)
         if args.command == "watch":
             try:
                 reader.watch(stop)

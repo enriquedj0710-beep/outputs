@@ -45,12 +45,21 @@ python codex_adapter.py consulta --salud
 
 - Indexa Markdown de `~/.codex/memories`, `~/.codex/AGENTS.md` y los AGENTS.md de
   proyectos agregados explícitamente. No indexa `auth.json` ni configura credenciales.
-- Observa `sessions/**/*.jsonl` de Codex. Muestra inicio, turnos, herramientas,
+- Lee el historial SQLite de Codex desktop (`thread_history_1.sqlite`) y observa
+  `sessions/**/*.jsonl` como alternativa para sesiones sin proyección SQLite.
+  Evita duplicar actividad presente en ambas fuentes. Muestra inicio, turnos, herramientas,
   respuestas de herramientas y compactación cuando el registro los contiene.
 - Guarda sólo metadatos: fechas, identificadores, nombres de herramientas y rutas.
   No copia mensajes, resultados, razonamiento ni cuerpos de cambios al registro del mapa.
-- Recupera los últimos diez minutos y continúa desde offsets persistentes. Lee sólo
+- Recupera una hora de historial de escritorio (diez minutos para JSONL) y continúa
+  desde identificadores y offsets persistentes. Lee sólo
   registros completos. Un candado evita dos observadores sobre los mismos datos.
+- Las bases de Codex no se modifican. Usa copias temporales del archivo y su WAL,
+  descarta copias tomadas durante una escritura y las elimina al terminar la consulta.
+  Los textos privados se procesan sólo para extraer metadatos; nunca se guardan en
+  los eventos ni en los identificadores persistentes del observador.
+- `codex-data/codex-status.json` informa cuándo se comprobó la actividad, cuántos
+  eventos se importaron y si hubo algún error de lectura.
 - Los archivos de sesión son un formato interno de Codex: futuras versiones pueden
   necesitar ajustes. Herramientas ejecutadas dentro de `exec` se muestran como un
   evento genérico; no se interpretan ni ejecutan los programas JavaScript registrados.
@@ -64,6 +73,7 @@ python codex_adapter.py consulta --salud
 
 ```powershell
 python -m unittest test_codex_adapter -v
+python -m unittest test_codex_history -v
 python herramientas/prueba_humo.py
 ```
 
