@@ -10,3 +10,4 @@ problemas.json
 __pycache__/
 *.tmp
 codex-data/
+work/
