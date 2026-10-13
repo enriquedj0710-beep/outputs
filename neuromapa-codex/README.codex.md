@@ -33,7 +33,7 @@ codex mcp add neuromapa -- python C:\ruta\neuromapa-codex\codex_adapter.py mcp
 ```
 
 Reiniciá Codex después de registrarlo. Las herramientas son `sobre`, `buscar` y
-`leer_nota`. No hay inyección automática de contexto en cada pedido.
+`leer_nota`. También están `revisar_memorias`, `aprobar_memoria` y `descartar_memoria`.
 También se puede consultar desde la terminal:
 
 ```powershell
@@ -79,3 +79,29 @@ python herramientas/prueba_humo.py
 
 El registro MCP es un paso separado; esta adaptación no altera la configuración
 global de Codex al ejecutarse.
+
+## Contexto automático
+
+```powershell
+python instalar_contexto.py
+```
+
+Después abrí `/hooks` en Codex CLI y revisá/confiá en el hook de Neuromapa.
+Codex exige esa revisión; registrar el archivo no activa el hook por sí solo.
+Reiniciá Codex después de confiar en la definición. En cada mensaje, el hook busca
+hasta tres notas relevantes y ofrece como máximo 4000 caracteres de referencias.
+No guarda el mensaje del usuario, no bloquea tareas y no ejecuta el texto de las notas.
+
+## Propuestas de memoria
+
+El observador detecta algunas frases explícitas de decisiones, causas y soluciones
+en respuestas finales recientes. Es una detección por patrones, no una evaluación
+de veracidad: puede omitir decisiones o sugerir algo que no deba conservarse.
+Los borradores quedan privados en `codex-data/memoria-propuestas.json`.
+
+En Codex, pedí «revisa las memorias propuestas». Podés corregir el texto y aceptar
+o descartar cada propuesta. La herramienta de aprobación necesita la confirmación
+`APROBAR <id>` de esa propuesta concreta; el agente no debe aceptarlas por su cuenta.
+Las aceptadas se guardan en `codex-data/memorias-aprobadas/`, se indexan en el mapa
+y quedan disponibles para las consultas MCP y el contexto automático.
+No se escriben automáticamente en `~/.codex/memories`, ni se suben a GitHub.

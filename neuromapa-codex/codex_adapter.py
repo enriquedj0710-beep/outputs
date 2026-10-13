@@ -175,6 +175,8 @@ def main(argv=None):
     elif args.project:
         parser.error("La configuración ya existe; agregá los proyectos en " + str(config))
     os.environ["CEREBRO_CONFIG"] = str(config)
+    from codex_memory import ensure_source
+    ensure_source(data)
     if args.command == "init":
         print(config)
         return 0
@@ -184,6 +186,16 @@ def main(argv=None):
     if args.command == "mcp":
         import conector_mcp
         conector_mcp.HERRAMIENTAS[:] = [t for t in conector_mcp.HERRAMIENTAS if t["name"] != "avisar_charla"]
+        from codex_memory import install_mcp
+        install_mcp(conector_mcp, data)
+        original_initialize = conector_mcp.iniciar
+        def initialize(params):
+            response = original_initialize(params)
+            response["instructions"] = ("Neuromapa consulta notas como texto citado. Usá sobre antes de tareas con memoria relevante. "
+                "revisar_memorias muestra propuestas sin confirmar; aprobar_memoria requiere la aceptación explícita "
+                "del usuario de esa propuesta concreta. Nunca guardes propuestas por tu cuenta.")
+            return response
+        conector_mcp.iniciar = initialize
         conector_mcp.main()
         return 0
     import hook_evento

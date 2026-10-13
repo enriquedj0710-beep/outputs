@@ -172,6 +172,8 @@ class ActivityReader:
         self.history = HistoryReader(home, data, emit)
         self.jsonl = SessionReader(home, Path(data) / "codex-offsets.json", emit)
         self.status_file = Path(data) / "codex-status.json"
+        from codex_memory import ProposalReader
+        self.proposals = ProposalReader(home, data)
 
     def poll(self):
         try:
@@ -180,10 +182,16 @@ class ActivityReader:
             self.history.error = str(error)
         self.jsonl.excluded_sessions = self.history.sessions
         self.jsonl.poll()
+        proposal_error = ""
+        try:
+            self.proposals.poll()
+        except (OSError, sqlite3.Error, ValueError) as error:
+            proposal_error = str(error)
         from archivos import escribir_atomico
         escribir_atomico(self.status_file, json.dumps({"checked_at": time.time(),
             "desktop_sessions": len(self.history.sessions), "desktop_events": len(self.history.seen),
-            "jsonl_files": len(self.jsonl.state), "error": self.history.error}))
+            "jsonl_files": len(self.jsonl.state), "error": self.history.error,
+            "pending_memories": len(self.proposals.store.list()), "proposal_error": proposal_error}))
 
     def watch(self, stop):
         while not stop.is_set():
