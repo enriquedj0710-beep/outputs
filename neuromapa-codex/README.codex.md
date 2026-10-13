@@ -1,0 +1,71 @@
+# Neuromapa para Codex
+
+Adaptación local del proyecto MIT de lumiel777. Requiere Python 3.10+.
+Conserva el mapa 3D, el buscador y el diagnóstico de notas originales.
+
+## Abrir
+
+En esta carpeta:
+
+```powershell
+python codex_adapter.py init
+python codex_adapter.py abrir
+```
+
+El segundo comando mantiene el mapa y el observador activos hasta cerrar la terminal.
+Abre el navegador con la dirección local del servidor.
+Para agregar instrucciones de un proyecto al crear una configuración nueva:
+
+```powershell
+python codex_adapter.py --project C:\ruta\proyecto init
+```
+
+Si ya existe `codex-data/config.json`, editá sus fuentes para agregar proyectos.
+`--codex-home` selecciona otra instalación; por defecto usa `CODEX_HOME` o `~/.codex`.
+`--data` elige otro directorio de datos. Estas opciones van antes del comando.
+
+## Consultar notas desde Codex
+
+Registrar el conector MCP usando la ruta absoluta a esta copia:
+
+```powershell
+codex mcp add neuromapa -- python C:\ruta\neuromapa-codex\codex_adapter.py mcp
+```
+
+Reiniciá Codex después de registrarlo. Las herramientas son `sobre`, `buscar` y
+`leer_nota`. No hay inyección automática de contexto en cada pedido.
+También se puede consultar desde la terminal:
+
+```powershell
+python codex_adapter.py consulta --sobre "tema"
+python codex_adapter.py consulta --salud
+```
+
+## Alcance y datos
+
+- Indexa Markdown de `~/.codex/memories`, `~/.codex/AGENTS.md` y los AGENTS.md de
+  proyectos agregados explícitamente. No indexa `auth.json` ni configura credenciales.
+- Observa `sessions/**/*.jsonl` de Codex. Muestra inicio, turnos, herramientas,
+  respuestas de herramientas y compactación cuando el registro los contiene.
+- Guarda sólo metadatos: fechas, identificadores, nombres de herramientas y rutas.
+  No copia mensajes, resultados, razonamiento ni cuerpos de cambios al registro del mapa.
+- Recupera los últimos diez minutos y continúa desde offsets persistentes. Lee sólo
+  registros completos. Un candado evita dos observadores sobre los mismos datos.
+- Los archivos de sesión son un formato interno de Codex: futuras versiones pueden
+  necesitar ajustes. Herramientas ejecutadas dentro de `exec` se muestran como un
+  evento genérico; no se interpretan ni ejecutan los programas JavaScript registrados.
+- No implementa los hooks específicos de Claude, su freno de gasto ni su modo dormir
+  con Claude. Tampoco atribuye precios de Claude a tokens de Codex.
+- Conserva textos de interfaz originales que mencionan Claude. El mapa usa recursos
+  WebGL del proyecto original; puede necesitar Internet para cargar sus bibliotecas.
+- Las notas contienen información privada: no compartas el HTML generado sin revisarlo.
+
+## Verificar
+
+```powershell
+python -m unittest test_codex_adapter -v
+python herramientas/prueba_humo.py
+```
+
+El registro MCP es un paso separado; esta adaptación no altera la configuración
+global de Codex al ejecutarse.

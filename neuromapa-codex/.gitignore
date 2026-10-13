@@ -1,0 +1,12 @@
+cerebro.html
+/config.json
+/hechos.json
+/sugerencias.json
+en-vivo/
+historial/
+respaldos/
+hechos-propuestos.json
+problemas.json
+__pycache__/
+*.tmp
+codex-data/
